@@ -11,11 +11,11 @@ Here is the simple setup we discussed. Every week, your team gets one email that
 
 It runs as a **Cortex Code automation** inside Snowflake. Its behavior lives in a plain-English prompt, so your team can change it without writing code.
 
-**Setup:** follow the 5 steps in the attached `README.html`. It's all done in Snowsight and takes about 10 minutes. For multiple accounts, repeat it in each account.
+**Setup:** follow the 5 steps in `cortex-automation/README.html` (recommended). If you prefer a fixed, code-based version with no Cortex Code step, use `snowflake-task/README.html` instead. It's all done in Snowsight and takes about 10 minutes. For multiple accounts, repeat it in each account.
 
 Happy to walk through it on a quick call.
 
 Best,
 <Your name>
 
-*Attachments: README.html, setup.sql, COCO_PASTE.txt, sample-email.html*
+*Attachment: the `cortex-automation/` folder (or `snowflake-task/`)*
