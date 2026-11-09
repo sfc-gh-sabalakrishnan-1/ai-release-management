@@ -1,0 +1,97 @@
+# AI Release Management - weekly automation prompt
+
+You are running unattended in a Snowflake AGENT TASK. Complete the task autonomously. Do NOT ask questions.
+SAFETY: run only SELECT / SHOW / DESCRIBE queries and the single SYSTEM$SEND_EMAIL call in Step 6. Never create, alter, insert, update, delete or drop anything.
+
+## Settings (edit these)
+- RECIPIENTS: you@company.com
+- EMAIL_INTEGRATION: AI_RELEASE_MGMT_EMAIL
+- DOCS_SEARCH_SERVICE: SNOWFLAKE_DOCUMENTATION.SHARED.CKE_SNOWFLAKE_DOCS_SERVICE
+- LOOKBACK_DAYS: 180
+
+## Goal
+Send one clear weekly email titled "AI Release Management" that tells the team:
+which Cortex AI models this account uses, which are deprecated or retiring, who and what uses them, what to swap to,
+plus new features and behavior change bundles.
+
+## Step 1 - Deprecation schedule (from Snowflake docs, no internet)
+Search the docs service with SNOWFLAKE.CORTEX.SEARCH_PREVIEW, e.g.
+  SELECT SNOWFLAKE.CORTEX.SEARCH_PREVIEW('<DOCS_SEARCH_SERVICE>', '{"query":"Cortex model deprecations","columns":["SOURCE_URL","CHUNK"],"limit":10}');
+Run several searches (for example: "Cortex model deprecations", "model lifecycle legacy end-of-life", "recommended replacement model",
+"AI_COMPLETE available models"). The JSON argument must be a literal string - run one search per query (no joins or variables inside SEARCH_PREVIEW).
+Snowflake publishes one page per month named "Cortex model deprecations for <Month> <Year>", and each page's model table is split
+across several search results. So also search each month by name, from 12 months ago to 6 months ahead
+(e.g. "Cortex model deprecations for August 2026 models table", limit 10), and read ALL returned chunks from that page.
+Read the results yourself and build a list: model id, legacy date, end-of-life (EOL) date, replacement model, doc link.
+Rules:
+- Legacy = only accounts that already used the model can keep using it until EOL. It is NOT end-of-life.
+- Replacement must be a model that is not itself deprecated, and never the same model.
+- Treat names like "claude-4-sonnet" and "claude-sonnet-4" as the same model.
+- Status: RETIRED (EOL passed), "<=30 DAYS", "<=90 DAYS", "<=180 DAYS" (EOL coming), LEGACY (legacy date passed, no EOL), SUPPORTED (not on any list).
+
+## Step 2 - Models used in this account (last LOOKBACK_DAYS)
+Query SNOWFLAKE.ACCOUNT_USAGE. Use whichever of these views exist (skip any that error):
+- CORTEX_AI_FUNCTIONS_USAGE_HISTORY and CORTEX_FUNCTIONS_USAGE_HISTORY (model_name, function_name, user_id)
+- CORTEX_REST_API_USAGE_HISTORY (model_name, user_id)
+- CORTEX_AGENT_USAGE_HISTORY and SNOWFLAKE_INTELLIGENCE_USAGE_HISTORY (agent name, user_name; the model name is inside the TOKENS_GRANULAR JSON - flatten it)
+Join user_id to SNOWFLAKE.ACCOUNT_USAGE.USERS for name and email. Calls with no user = "(system)".
+For each model: users, agents/functions, last call date, call count, Active (called in last 30 days) or Inactive.
+Inspect column names with DESCRIBE VIEW first if a query fails, then adapt.
+
+## Step 2b - Double-check every model in use (do not skip)
+For EVERY model found in Step 2 that is not already on your deprecation list, run one more docs search with that exact model name
+plus "deprecation" (e.g. "llama3.1-8b deprecation legacy"). Only mark it SUPPORTED if no deprecation, legacy or end-of-life notice mentions it.
+
+## Step 3 - Hard-coded model names
+For each at-risk model, search the definitions in SNOWFLAKE.ACCOUNT_USAGE.PROCEDURES, FUNCTIONS and VIEWS (deleted IS NULL)
+for the model name in quotes. List object, type, model, owner role, last altered.
+
+## Step 4 - New features and bundles
+Search the same docs service for recent release notes ("new features generally available", "public preview", "behavior change bundle").
+Pick the 10 most recent features (name, GA or Preview, date, AI yes/no, doc link) and the current behavior change bundles
+(name, status, up to 5 key changes - search "<bundle name> bundle" for each bundle to get its changes, link https://docs.snowflake.com/en/release-notes/bcr-bundles/<name>_bundle).
+
+## Step 5 - Build the email from this TEMPLATE
+Keep this exact structure, colors and order. Inline CSS only, tables only (email-safe). Replace {placeholders}; repeat rows as needed.
+Keep text short. No paragraphs of prose.
+
+<div style="background:#EEF2F6;font-family:Arial,Helvetica,sans-serif;color:#1E293B;padding:20px 8px">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:920px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden">
+<tr><td style="background:#11567F;background-image:linear-gradient(120deg,#11567F,#29B5E8);padding:22px 24px;color:#fff">
+ <div style="font-size:22px;font-weight:bold">&#10052; snowflake</div>
+ <div style="font-size:20px;font-weight:bold;margin-top:12px">AI Release Management</div>
+ <div style="font-size:13px;color:#DDF3FB">Account {account} &middot; Week of {date} &middot; Last {LOOKBACK_DAYS} days of usage</div></td></tr>
+<!-- 5 TILES: one row, 5 cells, each: big number + small uppercase label, top border color -->
+<!--   Models in use (#11567F) | At risk (#D93025) | Users affected (#E8A317) | Agents affected (#E8A317) | Code to fix (#D93025) -->
+<!-- BANNER: red box (#FDECEA, left border #D93025): "Do this week:" 1-3 short actions. If nothing at risk: green box "All clear". -->
+<!-- 1 DEPRECATION TIMELINE: one row per month with any EOL/legacy date. Cells = a horizontal bar of small colored blocks, one per model:
+     #D93025 in use & passed, #F3B0AA not used & passed, #E8A317 in use & upcoming, #F6D99A not used & upcoming.
+     Right side: "N models" and in red bold "in use: <names>". Legend line under it. -->
+<!-- 2 ACTION REQUIRED table: Model (+account) | Status pill + Active/Inactive | Deadline | Users (first 4, "+N more") |
+     Agents / functions (first 3, "+N more") | Last call | Calls | Swap to (green, monospace). Most urgent first. -->
+<!-- 3 CODE SWAP table: Where | Before (red monospace) | After (green monospace). Rows for AI function AI_COMPLETE('old',...),
+     Agent spec "orchestration: old", REST API "model": "old" - only where that model is used that way. -->
+<!-- 4 HARD-CODED OBJECTS table: Object | Type | Model | Owner role | Last changed. -->
+<!-- 5 ALL MODELS IN USE table: Model | Status pill (SUPPORTED = green #188038) | Users | Used by | Last call | Calls. -->
+<!-- 6 COPY-PASTE SQL: dark box (#0F172A, light text, monospace) with one SQL that lists every user/agent/function for a model; first line: SET m = '<a model>'; -->
+<!-- divider -->
+<!-- 7 OTHER DEPRECATIONS (not used here) table: Model | Status | Date | Replacement. -->
+<!-- 8 NEW FEATURES table: Date | GA (green) / PREVIEW (blue #1A73E8) pill + AI pill (#11567F) | Feature name as link. Section link: https://docs.snowflake.com/en/release-notes/new-features -->
+<!-- 9 BEHAVIOR CHANGE BUNDLES table: Bundle (link) | Status | Key changes. Section link: https://docs.snowflake.com/en/release-notes/behavior-changes -->
+<!-- FOOTER small grey: sources; "Legacy = only accounts that already used the model may keep calling it until end-of-life."; "Dates are read from Snowflake docs by AI - verify before acting." -->
+</table></div>
+
+Styling rules: section titles 17px bold with number ("1  Deprecation timeline"); table header cells #F1F5F9, 11px uppercase;
+cells 13px with 1px #EEF2F6 bottom border; pills = small rounded colored label, white bold 11px text
+(RETIRED / <=30 DAYS red #D93025, LEGACY / <=90 DAYS amber #E8A317, <=180 DAYS blue #1A73E8, SUPPORTED green #188038).
+Long object names must wrap; nothing wider than 920px.
+
+## Step 6 - Send
+Subject: "AI Release Management - {account} - {N} models at risk" (or "- All clear").
+CALL SYSTEM$SEND_EMAIL('<EMAIL_INTEGRATION>', '<RECIPIENTS>', '<subject>', '<html>', 'text/html');
+Escape single quotes in the HTML by doubling them. Send exactly once.
+
+## Finish
+Write a 3-line summary as your final message, then print exactly one line:
+AI_RELEASE_MGMT_OK models_in_use=<N> at_risk=<N> users=<N> code=<N>
+or AI_RELEASE_MGMT_FAILED:<one-line reason>

@@ -1,33 +1,27 @@
 # AI Release Management for Snowflake
 
-A weekly email showing every AI model your account uses, which ones are being retired, the users and agents affected, and what to swap to. It also lists new GA/Preview features and behavior change bundles. Everything runs inside Snowflake, so you only need Snowsight.
+A weekly email showing every AI model your account uses, which ones are being retired, the users and agents affected, and what to swap to. It also lists new GA/Preview features and behavior change bundles.
+It runs as a **Cortex Code automation** in Snowflake, and its behavior lives in a plain-English prompt that anyone can edit.
 
 **Open [`README.html`](README.html) for the illustrated 5-step guide.**
 
 ## Setup (about 10 minutes, once per account)
-
-1. **Marketplace:** get the free **Snowflake Documentation** listing and keep the name `SNOWFLAKE_DOCUMENTATION`.
-2. **Profile:** verify the email address of every recipient (Settings → Profile).
-3. **Worksheet (ACCOUNTADMIN):** paste [`setup.sql`](setup.sql) and edit the top 3 lines: recipients, warehouse, schedule.
-4. **Run all.** The first report is sent in about 2 minutes.
-5. **Inbox:** the report repeats on your schedule.
+1. **Marketplace:** get the free **Snowflake Documentation** listing.
+2. **Sign in:** sign in to Snowsight as the service user that will run it, and make sure every recipient's email is verified.
+3. **Worksheet (ACCOUNTADMIN):** run [`setup.sql`](setup.sql). It creates the email channel and grants, after you edit the recipients and role.
+4. **Cortex Code:** paste [`COCO_PASTE.txt`](COCO_PASTE.txt) (edit the timezone and recipients). It creates, tests and schedules the automation.
+5. **Inbox:** the report arrives weekly.
 
 ## Files
-
 | File | Purpose |
 |---|---|
 | `README.html` | Step-by-step guide |
-| `setup.sql` | The only file you run |
+| `setup.sql` | Email integration and grants (about 10 lines) |
+| `COCO_PASTE.txt` | The message to paste into Cortex Code |
+| `automation-prompt.md` | The weekly instructions in plain English (already inside `COCO_PASTE.txt`); edit this to change behavior |
 | `sample-email.html` | Example report (anonymized) |
-| `src/report.py` | Report source (already embedded in `setup.sql`) |
 | `email-to-customer.md` | Cover email template |
 
-## Manage
-
-```sql
-EXECUTE TASK AI_MODEL_WATCH.CORE.WEEKLY_REPORT;                -- send now
-ALTER TASK AI_MODEL_WATCH.CORE.WEEKLY_REPORT SUSPEND;          -- pause (RESUME to restart)
-DROP DATABASE AI_MODEL_WATCH; DROP INTEGRATION AI_MODEL_WATCH_EMAIL;  -- remove
-```
-
-Deprecation dates and replacement models are extracted from Snowflake docs by an AI model. Check each one against the linked doc before acting.
+## Notes
+- The automation runs read-write because sending to several users (`SYSTEM$SEND_EMAIL`) and the docs search need it. The prompt restricts it to read-only queries plus one email.
+- Deprecation dates and suggested replacements are read from Snowflake docs by AI. Check them against the linked doc before acting.

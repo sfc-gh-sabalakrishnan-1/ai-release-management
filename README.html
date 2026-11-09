@@ -56,7 +56,7 @@ footer { font-size:13px; color:light-dark(#64748b,#94a3b8); padding:20px 0 40px;
  <div class="logo"><svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true"><g stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none"><line x1="24" y1="4" x2="24" y2="44"/><line x1="6.7" y1="14" x2="41.3" y2="34"/><line x1="6.7" y1="34" x2="41.3" y2="14"/><polyline points="18,8 24,13 30,8"/><polyline points="18,40 24,35 30,40"/></g></svg>snowflake</div>
  <h1>AI Release Management</h1>
  <p>A weekly email: which AI models you use, which are retiring, who and what is affected, and what to swap to &mdash; plus new features and bundle changes.</p>
- <div class="chips"><span class="chip">5 steps</span><span class="chip">~10 minutes</span><span class="chip">Snowsight only</span><span class="chip">Runs in Snowflake</span></div>
+ <div class="chips"><span class="chip">5 steps</span><span class="chip">~10 minutes</span><span class="chip">Snowsight only</span><span class="chip">Cortex Code automation</span><span class="chip">Prompt-based</span></div>
 </div></header>
 
 <div class="wrap">
@@ -67,37 +67,36 @@ footer { font-size:13px; color:light-dark(#64748b,#94a3b8); padding:20px 0 40px;
  <h3>Get the Snowflake Documentation listing</h3>
  <p><b>Data Products &rarr; Marketplace</b> &rarr; search <b>Snowflake Documentation</b> &rarr; <b>Get</b>. Keep the name <code>SNOWFLAKE_DOCUMENTATION</code>.</p>
  <div class="shot"><div class="bar"><i></i><i></i><i></i><span>Marketplace</span></div><div class="ui"><div class="search">Snowflake Documentation</div><div class="tile"><div class="ic">&#10052;</div><div style="flex:1"><b>Snowflake Documentation</b><br><span style="font-size:12px;opacity:.7">Snowflake &middot; Cortex Knowledge Extension &middot; Free</span></div><span class="btn">Get</span></div></div></div>
- <p class="note">Already have it? Skip to step 2.</p>
 </div></div>
 
 <div class="step"><div class="num">2</div><div>
  <div class="meta">Snowsight &middot; 1 min</div>
- <h3>Verify the email address that will receive the report</h3>
- <p>Click your name (bottom-left) &rarr; <b>Settings &rarr; Profile</b> &rarr; <b>Email</b> &rarr; verify. Every recipient must be a verified Snowflake user.</p>
- <div class="shot"><div class="bar"><i></i><i></i><i></i><span>Settings &rsaquo; Profile</span></div><div class="ui">Email &nbsp; <code>you@company.com</code> &nbsp; <span class="ok">&#10003; Verified</span></div></div>
+ <h3>Sign in as the account that will run it, and verify emails</h3>
+ <p>The automation runs as the user who creates it. Sign in to Snowsight as your <b>service / automation user</b>. It must be able to sign in to Snowsight.</p>
+ <p>Every recipient must be a Snowflake user with a <b>verified email</b> (Settings &rarr; Profile).</p>
 </div></div>
 
 <div class="step"><div class="num">3</div><div>
  <div class="meta">SQL worksheet &middot; ACCOUNTADMIN &middot; 2 min</div>
- <h3>Open <code>setup.sql</code> and edit 3 lines</h3>
- <p><b>Projects &rarr; Workspaces</b> (or <b>Worksheets</b>) &rarr; <b>+ SQL file</b> &rarr; paste all of <code>setup.sql</code>. Change only the top three lines:</p>
-<pre><span class="k">SET</span> recipients = <span class="e">'you@company.com'</span>;     <span style="color:#64748b">-- who gets the email (comma-separated, no spaces)</span>
-<span class="k">SET</span> warehouse  = <span class="e">'COMPUTE_WH'</span>;          <span style="color:#64748b">-- any XS warehouse</span>
-<span class="k">SET</span> schedule   = <span class="e">'USING CRON 0 8 * * MON America/New_York'</span>;  <span style="color:#64748b">-- Mondays 8am</span></pre>
+ <h3>Run <code>setup.sql</code></h3>
+ <p>Paste it into a worksheet, edit the recipient list and the role name, then <b>Run All</b>. It creates one email channel and grants. That&rsquo;s all.</p>
+<pre><span class="k">ALLOWED_RECIPIENTS</span> = (<span class="e">'person1@company.com'</span>, <span class="e">'person2@company.com'</span>)
+<span class="k">GRANT</span> ... <span class="k">TO ROLE</span> <span class="e">SVC_ROLE</span>;</pre>
 </div></div>
 
 <div class="step"><div class="num">4</div><div>
- <div class="meta">SQL worksheet &middot; 3 min</div>
- <h3>Select all &rarr; Run</h3>
- <p>Press <b>Ctrl/Cmd + A</b>, then <b>Ctrl/Cmd + Enter</b>. The last statement sends the first report. It takes about 2 minutes.</p>
- <div class="shot"><div class="bar"><i></i><i></i><i></i><span>Results</span></div><div class="ui"><code>Sent: AI Release Management - YOUR_ACCOUNT - 6 models at risk</code></div></div>
+ <div class="meta">Cortex Code in Snowsight &middot; 5 min</div>
+ <h3>Paste one message into Cortex Code</h3>
+ <p>Open <b>Cortex Code</b> (bottom-right of Snowsight). Paste all of <code>COCO_PASTE.txt</code> after editing the two marked lines: timezone and recipients.</p>
+ <p>Cortex Code creates the automation, runs one test (you get the email), then starts the weekly schedule. Answer <b>Yes</b> when asked.</p>
+ <div class="shot"><div class="bar"><i></i><i></i><i></i><span>Cortex Code</span></div><div class="ui"><span style="opacity:.7">You:</span> Create a Cortex Code automation for me&hellip; AI_RELEASE_MANAGEMENT&hellip;<br><br><span style="opacity:.7">Cortex Code:</span> Created paused. Test run sent the email. <span class="ok">Start the schedule?</span> <span class="btn">Yes</span></div></div>
 </div></div>
 
 <div class="step"><div class="num">5</div><div>
  <div class="meta">Inbox &middot; done</div>
- <h3>Check your inbox</h3>
- <p>The report arrives now and then every week on schedule. Nothing else to maintain.</p>
- <p class="note">Multiple accounts? Repeat steps 1&ndash;4 in each account. Each email shows its account name.</p>
+ <h3>Check the inbox</h3>
+ <p>Everyone on the list gets the report now and every week after that.</p>
+ <p class="note"><b>To change anything</b> (sections, wording, lookback, recipients), edit the plain-English prompt in Cortex Code: <i>&ldquo;Update AI_RELEASE_MANAGEMENT prompt: &hellip;&rdquo;</i>. No code to maintain. For multiple accounts, repeat steps 1&ndash;4 in each.</p>
 </div></div>
 
 <h2 id="preview">What you get</h2>
@@ -113,14 +112,15 @@ footer { font-size:13px; color:light-dark(#64748b,#94a3b8); padding:20px 0 40px;
 </table></div>
 <p>Open <code>sample-email.html</code> to see a real example.</p>
 
-<h2>Manage</h2>
+<h2>Manage (ask Cortex Code)</h2>
 <div class="table-wrap"><table>
-<tr><th>To</th><th>Run</th></tr>
-<tr><td>Send now</td><td><code>EXECUTE TASK AI_MODEL_WATCH.CORE.WEEKLY_REPORT;</code></td></tr>
-<tr><td>Pause / resume</td><td><code>ALTER TASK AI_MODEL_WATCH.CORE.WEEKLY_REPORT SUSPEND;</code> / <code>RESUME;</code></td></tr>
-<tr><td>Change recipients or schedule</td><td>Edit the 3 lines and run <code>setup.sql</code> again</td></tr>
-<tr><td>Remove everything</td><td><code>DROP DATABASE AI_MODEL_WATCH; DROP INTEGRATION AI_MODEL_WATCH_EMAIL;</code></td></tr>
+<tr><th>To</th><th>Say</th></tr>
+<tr><td>Send now</td><td><i>&ldquo;Run AI_RELEASE_MANAGEMENT now.&rdquo;</i></td></tr>
+<tr><td>Change schedule</td><td><i>&ldquo;Change AI_RELEASE_MANAGEMENT to every Friday at 9am.&rdquo;</i></td></tr>
+<tr><td>Change content</td><td><i>&ldquo;Update the AI_RELEASE_MANAGEMENT prompt to also &hellip;&rdquo;</i></td></tr>
+<tr><td>Add recipients</td><td>Add them to <code>ALLOWED_RECIPIENTS</code> in setup.sql, re-run it, and update RECIPIENTS in the prompt</td></tr>
+<tr><td>Pause / remove</td><td><i>&ldquo;Pause / drop AI_RELEASE_MANAGEMENT.&rdquo;</i>, then <code>DROP INTEGRATION AI_RELEASE_MGMT_EMAIL;</code></td></tr>
 </table></div>
 
-<footer>Read-only scan of <code>SNOWFLAKE.ACCOUNT_USAGE</code> (last 180 days) and the Snowflake Documentation listing. No data leaves Snowflake. Cost: one short XS warehouse run plus a few AI_COMPLETE calls per week.</footer>
+<footer>Runs as a Cortex Code automation in Snowflake (read-write, run by your service user). The prompt limits it to read-only queries plus one email. Dates come from Snowflake docs and are read by AI, so check them before acting.</footer>
 </div></body></html>
